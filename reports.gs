@@ -57,10 +57,12 @@ function ReportMailer(kwargs) {
   this.send_mail = function () {
     // append script log to email
     Logger.log('Trying to send email!');
-    var log = '<p><b>Script Log:</b><br />' + Logger.getLog(); // wrap this in html
-    log = log.replace(/(?:\r\n|\r|\n)/g, '<br />'); // linebreaks
-    log += '</p>';
-    this.add_body_chunk(log, {});
+    if (SEND_LOG_TRANSCRIPT) {
+      var log = '<p><b>Script Log:</b><br />' + Logger.getLog(); // wrap this in html
+      log = log.replace(/(?:\r\n|\r|\n)/g, '<br />'); // linebreaks
+      log += '</p>';
+      this.add_body_chunk(log, {});
+    }
     MailApp.sendEmail(this);
   };
 }
