@@ -5,6 +5,7 @@ var MAIL_BCC = ''; // Comma separated list
 var MAIL_REPLY_TO = MAIL_TO;
 var MAIL_BASE_SUBJECT = 'Finance Report - ';
 var FAIL_ON_COMPONENT_ERROR = false;
+var SEND_LOG_TRANSCRIPT = true; // include the script logs at the end of the report email
 
 // Monthly Report Settings
 var MONTHLY_REPORT_WINDOW_IN_MONTHS = 13;
@@ -93,4 +94,3 @@ var FORECAST_NM_ALPHA = .5; // > 0
 var FORECAST_NM_GAMMA = 1.15; // > 1
 var FORECAST_NM_RHO = 0.5 // 0 < rho <= .5
 var FORECAST_NM_SIGMA = 0.5 // standard is 0.5
-
