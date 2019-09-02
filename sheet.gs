@@ -7,6 +7,7 @@ function onOpen() {
     .addSeparator()
     .addItem('Clean Input', 'cmd_clean_input')
     .addItem('Maintain Records', 'cmd_maintain_record_sheets')
+    .addItem('Export Records', 'cmd_export_records')
     .addSubMenu(ui.createMenu('Reports')
       .addItem('Monthly Report', 'cmd_monthly_report')
       .addItem('Monthly Report by Account Name', 'cmd_monthly_report_by_account_name')
@@ -95,6 +96,23 @@ function cmd_clean_input() {
   income_range.clearContent();
   account_cell.clearContent();
   Logger.log('Finished cleaning input sheet');
+}
+
+function cmd_export_records() {
+  var mailer = new ReportMailer(
+    {'to': MAIL_TO, 'cc': MAIL_CC, 'bcc': MAIL_BCC, 'subject': MAIL_BASE_SUBJECT + 'Record Export', 'reply_to': MAIL_REPLY_TO}
+  );
+  Logger.log('Getting all expense records and converting to arrays...');
+  var all_expenses_array = get_expense_records().map(function(record) { return record.to_array(); });
+  Logger.log('Getting all income records and converting to arrays...');
+  var all_incomes_array = get_income_records().map(function(record) { return record.to_array(); });
+  var files = [];
+  Logger.log('Creating JSON blobs...');
+  files.push(Utilities.newBlob(JSON.stringify(all_expenses_array), 'text/plain', 'expense.json'));
+  files.push(Utilities.newBlob(JSON.stringify(all_incomes_array), 'text/plain', 'income.json'));
+  mailer.attachments = files;
+  mailer.add_body_chunk('<p>Here is the current records for the Finances System.<br />Format is <b>JSON</b> in a text file.</p>', {});
+  mailer.send_mail();
 }
 
 function cmd_monthly_report() {
@@ -193,4 +211,3 @@ function get_income_from_input_row(account, row) {
   var note = row[3];
   return get_income_record(account, date, amount, category, note);
 }
-
