@@ -267,21 +267,23 @@ function build_kpi(mailer, kwargs) {
   var sheet = ensure_new_sheet('_kpis');
   var sheet_range = sheet.getRange(1, 1, rows.length, header.length);
   sheet_range.setValues(rows);
-  var chart = sheet.newChart()
+  var fixed_range_chart = sheet.newChart()
     .asAreaChart().addRange(sheet_range)
     .setOption('chartArea', {width:'95%', height:'95%'})
     .setOption('legend', {position:'in'})
     .setOption('titlePosition', 'in')
+    // fixed to 100% to -25%
     .setOption('hAxis', {'title':'Date', 'gridlines':{'count': sheet_range.getHeight()-1}, 'textPosition':'in'})
-    .setOption('vAxis', {'title':'Ratio', 'textPosition':'in'})
+    .setOption('vAxis', {'title':'Ratio', 'textPosition':'in', 'format': '#,###%', 'viewWindow': {'max': 1, 'min': -.25}})
     .setOption('height', 400).setOption('width', 900)
     .setOption('areaOpacity', 0.0)
     .setOption('lineWidth', 3)
     .setOption('colors', colours);
-  chart.setOption('title', 'Key Performance Indicators');
+  fixed_range_chart.setOption('title', 'Key Performance Indicators');
+  // Eventually we may want to create additional charts for KPIs that do not map into the 0% - 100% range, hence the naming scheme
 
   // Output html and chart image:
-  mailer.add_body_chunk('<p text-align="center"><img src="cid:kpi_1_chart"></p>', {'kpi_1_chart': chart.build().getAs('image/png')});
+  mailer.add_body_chunk('<p text-align="center"><img src="cid:kpi_fixed1_chart"></p>', {'kpi_fixed1_chart': fixed_range_chart.build().getAs('image/png')});
   Logger.log('Cleaning up sheet');
   delete_sheet('_kpis');
   Logger.log('Done building KPIs');
@@ -545,4 +547,3 @@ function build_discretionary_expense_by_account(mailer, kwargs) {
   delete_sheet('_discretionary_expense_by_account_review');
   Logger.log('Done building discretionary expense by account review');
 }
-
