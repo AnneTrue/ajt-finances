@@ -9,9 +9,11 @@ function onOpen() {
     .addItem('Maintain Records', 'cmd_maintain_record_sheets')
     .addItem('Export Records', 'cmd_export_records')
     .addSubMenu(ui.createMenu('Reports')
-      .addItem('Monthly Report', 'cmd_monthly_report')
-      .addItem('Monthly Report by Account Name', 'cmd_monthly_report_by_account_name')
-      .addItem('Monthly-to-date Report', 'cmd_month_to_date_report'))
+                .addItem('Monthly Report', 'cmd_monthly_report')
+                .addItem('Monthly Report by Account Name', 'cmd_monthly_report_by_account_name')
+                .addItem('Monthly-to-date Report', 'cmd_month_to_date_report')
+                .addItem('Automatic Monthly Reports by Account Name', 'trigger_monthly_report_by_account_names')
+               )
     .addToUi();
 }
 
@@ -130,6 +132,21 @@ function cmd_monthly_report() {
   send_report(mailer, report_components, component_kwargs);
 }
 
+function send_monthly_report_by_account_names(account_names, mailer) {
+  Logger.log('Generating monthly report for accounts: %s', account_names);
+  var account_filter = get_record_filter({'accounts': account_names})
+  var all_account_expense_records = get_expense_records().filter(account_filter);
+  var all_account_income_records = get_income_records().filter(account_filter);
+  var report_components = DEFAULT_REPORT_COMPONENTS;
+  var component_kwargs = {
+    'all_expense_records': all_account_expense_records,
+    'all_income_records': all_account_income_records,
+    'timeframe_start': get_month_year(get_relative_month(MONTHLY_REPORT_WINDOW_IN_MONTHS)),
+    'timeframe_end': get_month_year(new Date()),
+  }
+  send_report(mailer, report_components, component_kwargs);
+}
+
 function cmd_monthly_report_by_account_name() {
   var ui = SpreadsheetApp.getUi();
   var result = ui.prompt(
@@ -148,29 +165,31 @@ function cmd_monthly_report_by_account_name() {
         throw new Error('Invalid account name, check capitalisation: ' + account_names[i]);
       }
     }
-    Logger.log('Generating monthly report for accounts: %s', account_names);
-    var account_filter = get_record_filter({'accounts': account_names})
-    var all_account_expense_records = get_expense_records().filter(account_filter);
-    var all_account_income_records = get_income_records().filter(account_filter);
     var mailer = new ReportMailer(
       {'to': MAIL_TO, 'cc': MAIL_CC, 'bcc': MAIL_BCC, 'subject': MAIL_BASE_SUBJECT + 'Monthly Report by Account Name', 'reply_to': MAIL_REPLY_TO}
     );
-    var report_components = DEFAULT_REPORT_COMPONENTS;
-    var component_kwargs = {
-      'all_expense_records': all_account_expense_records,
-      'all_income_records': all_account_income_records,
-      'timeframe_start': get_month_year(get_relative_month(MONTHLY_REPORT_WINDOW_IN_MONTHS)),
-      'timeframe_end': get_month_year(new Date()),
-    }
-    send_report(mailer, report_components, component_kwargs);
+    send_monthly_report_by_account_names(account_names, mailer);
   } else {
     Logger.log('No input, exiting cmd_monthly_report_by_account_name');
   }
 }
 
+function trigger_monthly_report_by_account_names() {
+  for (target_email in ADDRESS_TO_ACCOUNT_MAPPING) {
+    if (!ADDRESS_TO_ACCOUNT_MAPPING.hasOwnProperty(target_email)) { continue; }
+    if (!ADDRESS_TO_ACCOUNT_MAPPING[target_email]) { continue; }
+    var mailer = new ReportMailer(
+      {'to': target_email, 'cc': null, 'bcc': null, 'subject': MAIL_BASE_SUBJECT + 'Monthly Report by Account Name', 'reply_to': MAIL_REPLY_TO}
+    );
+    Logger.log('Sending report to target email %s with accounts %s', target_email, ADDRESS_TO_ACCOUNT_MAPPING[target_email]);
+    send_monthly_report_by_account_names(ADDRESS_TO_ACCOUNT_MAPPING[target_email], mailer);
+    Logger.clear();
+  }
+}
+
 function cmd_month_to_date_report() {
   var mailer = new ReportMailer(
-    {'to': MAIL_TO, 'cc': MAIL_CC, 'bcc': MAIL_BCC, 'subject': MAIL_BASE_SUBJECT + 'Monthly Report', 'reply_to': MAIL_REPLY_TO}
+    {'to': MAIL_TO, 'cc': MAIL_CC, 'bcc': MAIL_BCC, 'subject': MAIL_BASE_SUBJECT + 'Month-to-Date Report', 'reply_to': MAIL_REPLY_TO}
   );
   var report_components = DEFAULT_REPORT_COMPONENTS;
   var component_kwargs = {
