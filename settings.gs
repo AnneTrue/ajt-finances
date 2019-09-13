@@ -10,6 +10,12 @@ var SEND_LOG_TRANSCRIPT = true; // include the script logs at the end of the rep
 // Monthly Report Settings
 var MONTHLY_REPORT_WINDOW_IN_MONTHS = 13;
 
+// Account-based Report Settings
+var ADDRESS_TO_ACCOUNT_MAPPING = {
+  'EXAMPLE ADDRESS': null,
+  // 'test-address@gmail.com': ['Joint', 'Demo'],
+}
+
 var ACCOUNT_NAMES = {
   //'name1': 'red',
   //'Joint': 'orange',
