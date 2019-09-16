@@ -225,7 +225,7 @@ function nelder_mead(series, kwargs) {
   var count_no_improvements = 0;
   while (true) {
     // Order results
-    results.sort(function(one_res) { return one_res[1]; });
+    results.sort(function(a, b) { return a[1] - b[1]; });
     var best = results[0][1];
     
     // Iteration break
@@ -311,4 +311,3 @@ function nelder_mead(series, kwargs) {
   }
   return results.shift(); // [tunings, best_score]
 }
-
