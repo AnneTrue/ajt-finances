@@ -91,11 +91,11 @@ var FORECAST_CURRENT_MODEL = FORECAST_MODELS['holt damped trend'];
 var FORECAST_HORIZON = 2; // Two months
 // Nelder-Mead parameters for autofitting
 // https://en.wikipedia.org/wiki/Nelder–Mead_method
-var FORECAST_NM_INITIAL_POSITION = {'alpha': 0.96, 'beta': 0.05, 'phi': 0.85};
-var FORECAST_NM_STEP = 0.2;
+var FORECAST_NM_INITIAL_POSITION = {'alpha': 0.5, 'beta': 0.5, 'phi': 0.55};
+var FORECAST_NM_STEP = 0.35;
 var FORECAST_NM_IMPROVE_THRESHOLD = 0.000001;
 var FORECAST_NM_IMPROVE_BREAK_ITERS = 10;
-var FORECAST_NM_MAX_ITERS = 108;
+var FORECAST_NM_MAX_ITERS = 333;
 var FORECAST_NM_ALPHA = .5; // > 0
 var FORECAST_NM_GAMMA = 1.15; // > 1
 var FORECAST_NM_RHO = 0.5 // 0 < rho <= .5
