@@ -78,6 +78,7 @@ function build_expense_review_reduced_categories(mailer, kwargs) {
   var colours = [];
   for (category_name in REDUCED_CATEGORIES) {
     if (!REDUCED_CATEGORIES.hasOwnProperty(category_name)) { continue; }
+    if (category_name === 'Misc') { continue; } // exclude Misc
     header.push(category_name);
     colours.push(REDUCED_CATEGORIES[category_name]);
   }
@@ -145,13 +146,15 @@ function build_cashflow_review(mailer, kwargs) {
     single_month_income_records = kwargs.all_income_records.filter(
       get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i]})
     );
-    single_total = sum_records(single_month_expense_records);
+    single_total = sum_records(
+      single_month_expense_records.filter(get_record_filter({'reduced_categories': ALL_REDUCED_BUT_MISC}))
+    );
     single_income = sum_records(single_month_income_records);
     single_mandatory = sum_records(
       single_month_expense_records.filter(get_record_filter({'reduced_categories': ['Mandatory', 'Debt']}))
     );
     single_discretionary = sum_records(
-      single_month_expense_records.filter(get_record_filter({'reduced_categories': ['Fun', 'Misc']}))
+      single_month_expense_records.filter(get_record_filter({'reduced_categories': ['Fun']}))
     );
     single_assets = sum_records(
       single_month_expense_records.filter(get_record_filter({'reduced_categories': ['Asset']}))
@@ -188,7 +191,9 @@ function build_cashflow_review(mailer, kwargs) {
 
 function build_kpi_savings_rate(expense_records, income_records) {
   // savings percentage of period income
-  var total_expense = sum_records(expense_records);
+  var total_expense = sum_records(expense_records.filter(
+    get_record_filter({'reduced_categories': ALL_REDUCED_BUT_MISC})
+  ));
   var total_income = sum_records(income_records);
   var savings = total_income.subtract(total_expense);
   if (total_income.to_literal() <= 0) { return 0; }
@@ -199,7 +204,7 @@ function build_kpi_discretionary_rate(expense_records, income_records) {
   // discretionary spending as percentage of period expenses
   var total_expense = sum_records(expense_records);
   var discretionary_records = expense_records.filter(
-    get_record_filter({'reduced_categories': ['Fun', 'Misc']})
+    get_record_filter({'reduced_categories': ['Fun']})
   );
   var total_discretionary = sum_records(discretionary_records);
   if (total_expense.to_literal() <= 0) { return 0; }
@@ -508,7 +513,7 @@ function build_discretionary_expense_by_account(mailer, kwargs) {
   var single_month_expense_records, single_month_expense_row;
   for (var i = 1; i < split_months.length; i++) {
     single_month_expense_records = kwargs.all_expense_records.filter(
-      get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i], 'reduced_categories': ['Fun', 'Misc']})
+      get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i], 'reduced_categories': ['Fun']})
     );
     single_month_expense_row = [split_months[i-1]];
     for (var j = 0; j < accounts.length; j++) {
