@@ -65,6 +65,12 @@ var REDUCED_CATEGORIES = {
   'Misc': 'blue',
   // reduced category: graph colour
 };
+var ALL_REDUCED_BUT_MISC = [
+  'Asset',
+  'Debt',
+  'Fun',
+  'Mandatory',
+];
 
 // Sheet names
 var INPUT_SHEET_NAME = 'Accounting Input';
