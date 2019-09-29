@@ -202,7 +202,9 @@ function build_kpi_savings_rate(expense_records, income_records) {
 
 function build_kpi_discretionary_rate(expense_records, income_records) {
   // discretionary spending as percentage of period expenses
-  var total_expense = sum_records(expense_records);
+  var total_expense = sum_records(expense_records.filter(
+    get_record_filter({'reduced_categories': ALL_REDUCED_BUT_MISC})
+  ));
   var discretionary_records = expense_records.filter(
     get_record_filter({'reduced_categories': ['Fun']})
   );
