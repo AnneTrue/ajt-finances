@@ -25,9 +25,9 @@ function cmd_maintain_record_sheets() {
   // Freeze header to prevent sort from moving them around
   expense_sheet.setFrozenRows(1);
   income_sheet.setFrozenRows(1);
-  // Sort by date (first col)
-  expense_sheet.sort(1);
-  income_sheet.sort(1);
+  // Sort by date (first col), descending
+  expense_sheet.sort(1, false);
+  income_sheet.sort(1, false);
   // Resize columns A,B,C, and E. Do not resize Notes column (D)
   expense_sheet.autoResizeColumns(1,3);
   expense_sheet.autoResizeColumn(5);
