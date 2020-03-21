@@ -1,29 +1,29 @@
 // Report Mailer Settings
-var MAIL_TO = ''; // Primary User here, only one please
-var MAIL_CC = ''; // Comma separated list of recipients
-var MAIL_BCC = ''; // Comma separated list
-var MAIL_REPLY_TO = MAIL_TO;
-var MAIL_BASE_SUBJECT = 'Finance Report - ';
-var FAIL_ON_COMPONENT_ERROR = false;
-var SEND_LOG_TRANSCRIPT = true; // include the script logs at the end of the report email
+const MAIL_TO = ''; // Primary User here, only one please
+const MAIL_CC = ''; // Comma separated list of recipients
+const MAIL_BCC = ''; // Comma separated list
+const MAIL_REPLY_TO = MAIL_TO;
+const MAIL_BASE_SUBJECT = 'Finance Report - ';
+const FAIL_ON_COMPONENT_ERROR = false;
+const SEND_LOG_TRANSCRIPT = true; // include the script logs at the end of the report email
 
 // Monthly Report Settings
-var MONTHLY_REPORT_WINDOW_IN_MONTHS = 13;
+const MONTHLY_REPORT_WINDOW_IN_MONTHS = 13;
 
 // Account-based Report Settings
-var ADDRESS_TO_ACCOUNT_MAPPING = {
+const ADDRESS_TO_ACCOUNT_MAPPING = {
   'EXAMPLE ADDRESS': null,
   // 'test-address@gmail.com': ['Joint', 'Demo'],
 }
 
-var ACCOUNT_NAMES = {
+const ACCOUNT_NAMES = {
   //'name1': 'red',
   //'Joint': 'orange',
   // account name: graph colour
 }
 
 // Valid Categories
-var EXPENSE_CATEGORIES = {
+const EXPENSE_CATEGORIES = {
   'Business & Work': 'Mandatory',
   'Car Fees': 'Mandatory', // maintenance, registrations, etc.
   'Clothing': 'Mandatory',
@@ -49,7 +49,7 @@ var EXPENSE_CATEGORIES = {
   'Other': 'Misc',
 };
 
-var INCOME_CATEGORIES = {
+const INCOME_CATEGORIES = {
   'Capital Gains': null,
   'Gift': null,
   'Interest': null,
@@ -57,7 +57,7 @@ var INCOME_CATEGORIES = {
   'Other': null,
 };
 
-var REDUCED_CATEGORIES = {
+const REDUCED_CATEGORIES = {
   'Asset': 'green',
   'Debt': 'red',
   'Fun': 'orange',
@@ -65,7 +65,7 @@ var REDUCED_CATEGORIES = {
   'Misc': 'blue',
   // reduced category: graph colour
 };
-var ALL_REDUCED_BUT_MISC = [
+const ALL_REDUCED_BUT_MISC = [
   'Asset',
   'Debt',
   'Fun',
@@ -73,36 +73,43 @@ var ALL_REDUCED_BUT_MISC = [
 ];
 
 // Sheet names
-var INPUT_SHEET_NAME = 'Accounting Input';
-var EXPENSE_SHEET_NAME = 'Expense Records';
-var INCOME_SHEET_NAME = 'Income Records';
+const INPUT_SHEET_NAME = 'Accounting Input';
+const EXPENSE_SHEET_NAME = 'Expense Records';
+const INCOME_SHEET_NAME = 'Income Records';
 
 // A1 notation for input fields
-var INPUT_SHEET_EXPENSE_RANGE = 'B5:E13';
-var INPUT_SHEET_INCOME_RANGE = 'H5:K13';
-var INPUT_SHEET_ACCOUNT_CELL = 'G2';
+const INPUT_SHEET_EXPENSE_RANGE = 'B5:E13';
+const INPUT_SHEET_INCOME_RANGE = 'H5:K13';
+const INPUT_SHEET_ACCOUNT_CELL = 'G2';
 
 // KPI Settings
-var KPI_FUNCTIONS = {
-  'savings_rate': {func: build_kpi_savings_rate, colour: 'green', display_name: 'Savings%', enabled: true},
-  'discretionary_rate': {func: build_kpi_discretionary_rate, colour: 'red', display_name: 'Discretionary%', enabled: true},
+const KPI_FUNCTIONS = {
+  'savings_rate': {colour: 'green', display_name: 'Savings%', enabled: true},
+  'discretionary_rate': {colour: 'red', display_name: 'Discretionary%', enabled: true},
 };
 
+function init_kpi_functions() {
+  // Functions cannot be referenced before their source files have been parsed
+  KPI_FUNCTIONS.savings_rate.func = build_kpi_savings_rate;
+  KPI_FUNCTIONS.discretionary_rate.func = build_kpi_discretionary_rate;
+}
+
 // Forecasting Settings
-var FORECAST_MODELS = {
-  'holt damped trend': {'func': holt_damped_trend, 'tune': holt_optimisation, 'forecast': holt_forecast_horizon},
-  // TODO try holt-winter's method (with seasonal component)
-};
-var FORECAST_CURRENT_MODEL = FORECAST_MODELS['holt damped trend'];
-var FORECAST_HORIZON = 2; // Two months
+const FORECAST_MODELS = {};
+function init_forecast_functions() {
+  // Functions cannot be referenced before their source files have been parsed
+  FORECAST_MODELS['holt damped trend'] = {'func': holt_damped_trend, 'tune': holt_optimisation, 'forecast': holt_forecast_horizon};
+}
+const FORECAST_CURRENT_MODEL = 'holt damped trend';
+const FORECAST_HORIZON = 2; // Two months
 // Nelder-Mead parameters for autofitting
 // https://en.wikipedia.org/wiki/Nelder–Mead_method
-var FORECAST_NM_INITIAL_POSITION = {'alpha': 0.5, 'beta': 0.5, 'phi': 0.55};
-var FORECAST_NM_STEP = 0.35;
-var FORECAST_NM_IMPROVE_THRESHOLD = 0.000001;
-var FORECAST_NM_IMPROVE_BREAK_ITERS = 10;
-var FORECAST_NM_MAX_ITERS = 333;
-var FORECAST_NM_ALPHA = .5; // > 0
-var FORECAST_NM_GAMMA = 1.15; // > 1
-var FORECAST_NM_RHO = 0.5 // 0 < rho <= .5
-var FORECAST_NM_SIGMA = 0.5 // standard is 0.5
+const FORECAST_NM_INITIAL_POSITION = {'alpha': 0.5, 'beta': 0.5, 'phi': 0.55};
+const FORECAST_NM_STEP = 0.35;
+const FORECAST_NM_IMPROVE_THRESHOLD = 0.000001;
+const FORECAST_NM_IMPROVE_BREAK_ITERS = 10;
+const FORECAST_NM_MAX_ITERS = 333;
+const FORECAST_NM_ALPHA = .5; // > 0
+const FORECAST_NM_GAMMA = 1.15; // > 1
+const FORECAST_NM_RHO = 0.5 // 0 < rho <= .5
+const FORECAST_NM_SIGMA = 0.5 // standard is 0.5
