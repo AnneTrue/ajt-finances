@@ -1,4 +1,4 @@
-var DEFAULT_REPORT_COMPONENTS = {
+const DEFAULT_REPORT_COMPONENTS = {
   'Expense Review (Reduced Categories)': build_expense_review_reduced_categories,
   'Cashflow Review': build_cashflow_review,
   'Key Performance Indicators': build_kpi,
@@ -15,7 +15,9 @@ function send_report(mailer, report_components, component_kwargs) {
   // mailer is new ReportMailer
   // report_components = {'human-readable component name': callable}
   // component kwargs = {all_expense_records, timeframe_start, timeframe_end}
-  for (component in report_components) {
+  init_kpi_functions();
+  init_forecast_functions();
+  for (let component in report_components) {
     if (!report_components.hasOwnProperty(component) || !report_components[component]) { continue; }
     Logger.log('Running report component %s', component);
     try {
@@ -48,8 +50,7 @@ function ReportMailer(kwargs) {
       // add horizontal rule to split between chunks
       this.htmlBody += '<hr />' + html;
     }
-    var key;
-    for (key in images) {
+    for (let key in images) {
       if (!images.hasOwnProperty(key)) { continue; }
       this.inlineImages[key] = images[key];
     }
@@ -58,7 +59,7 @@ function ReportMailer(kwargs) {
     // append script log to email
     Logger.log('Trying to send email!');
     if (SEND_LOG_TRANSCRIPT) {
-      var log = '<p><b>Script Log:</b><br />' + Logger.getLog(); // wrap this in html
+      let log = '<p><b>Script Log:</b><br />' + Logger.getLog(); // wrap this in html
       log = log.replace(/(?:\r\n|\r|\n)/g, '<br />'); // linebreaks
       log += '</p>';
       this.add_body_chunk(log, {});
@@ -74,25 +75,24 @@ function build_expense_review_reduced_categories(mailer, kwargs) {
   if (!kwargs.timeframe_start) { throw new Error('Missing timeframe_start'); }
   if (!kwargs.timeframe_end) { throw new Error('Missing timeframe_end'); }
   // Create header and dynamically allocate categories/colours
-  var header = ['Date'];
-  var colours = [];
-  for (category_name in REDUCED_CATEGORIES) {
+  const header = ['Date'];
+  const colours = [];
+  for (let category_name in REDUCED_CATEGORIES) {
     if (!REDUCED_CATEGORIES.hasOwnProperty(category_name)) { continue; }
     if (category_name === 'Misc') { continue; } // exclude Misc
     header.push(category_name);
     colours.push(REDUCED_CATEGORIES[category_name]);
   }
   // Create 2-dimensional array for values of sheet
-  var sheet_values = [header];
-  var split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
-  var single_month_row, single_month_records, single_category_records;
-  for (var i = 1; i < split_months.length; i++) {
-    single_month_row = [split_months[i-1]]; // Date column
-    single_month_records = kwargs.all_expense_records.filter(
+  const sheet_values = [header];
+  const split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
+  for (let i = 1; i < split_months.length; i++) {
+    const single_month_row = [split_months[i-1]]; // Date column
+    const single_month_records = kwargs.all_expense_records.filter(
       get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i]})
     );
-    for (var j = 1; j < header.length; j++) {
-      single_category_records = single_month_records.filter(
+    for (let j = 1; j < header.length; j++) {
+      const single_category_records = single_month_records.filter(
         get_record_filter({'reduced_categories': [header[j]]})
       );
       single_month_row.push(sum_records(single_category_records).value);
@@ -102,10 +102,10 @@ function build_expense_review_reduced_categories(mailer, kwargs) {
 
   // Build Review Chart
   Logger.log('Creating expense review chart');
-  var sheet = ensure_new_sheet('_expense_review');
-  var review_range = sheet.getRange(1, 1, sheet_values.length, header.length);
+  const sheet = ensure_new_sheet('_expense_review');
+  const review_range = sheet.getRange(1, 1, sheet_values.length, header.length);
   review_range.setValues(sheet_values);
-  var chart = sheet.newChart()
+  const chart = sheet.newChart()
     .asAreaChart().addRange(review_range)
     .setOption('chartArea', {width:'95%', height:'95%'})
     .setOption('legend', {position:'in'})
@@ -132,44 +132,42 @@ function build_cashflow_review(mailer, kwargs) {
   if (!kwargs.all_income_records) { throw new Error('Missing all_income_records'); }
   if (!kwargs.timeframe_start) { throw new Error('Missing timeframe_start'); }
   if (!kwargs.timeframe_end) { throw new Error('Missing timeframe_end'); }
-  var header = ['Date', 'Total Expenses', 'Mandatory', 'Discretionary', 'Assets', 'Income'];
-  var colours = ['black', 'grey', 'orange', 'blue', 'green'];
+  const header = ['Date', 'Total Expenses', 'Mandatory', 'Discretionary', 'Assets', 'Income'];
+  const colours = ['black', 'grey', 'orange', 'blue', 'green'];
   // Create 2-dimensional array for values of sheet
-  var sheet_values = [header];
-  var split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
-  var single_month_row, single_month_expense_records, single_month_income_records;
-  var single_total, single_mandatory, single_discretionary, single_assets, single_income;
-  for (var i = 1; i < split_months.length; i++) {
-    single_month_expense_records = kwargs.all_expense_records.filter(
+  const sheet_values = [header];
+  const split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
+  for (let i = 1; i < split_months.length; i++) {
+    const single_month_expense_records = kwargs.all_expense_records.filter(
       get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i]})
     );
-    single_month_income_records = kwargs.all_income_records.filter(
+    const single_month_income_records = kwargs.all_income_records.filter(
       get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i]})
     );
-    single_total = sum_records(
+    const single_total = sum_records(
       single_month_expense_records.filter(get_record_filter({'reduced_categories': ALL_REDUCED_BUT_MISC}))
     );
-    single_income = sum_records(single_month_income_records);
-    single_mandatory = sum_records(
+    const single_income = sum_records(single_month_income_records);
+    const single_mandatory = sum_records(
       single_month_expense_records.filter(get_record_filter({'reduced_categories': ['Mandatory', 'Debt']}))
     );
-    single_discretionary = sum_records(
+    const single_discretionary = sum_records(
       single_month_expense_records.filter(get_record_filter({'reduced_categories': ['Fun']}))
     );
-    single_assets = sum_records(
+    const single_assets = sum_records(
       single_month_expense_records.filter(get_record_filter({'reduced_categories': ['Asset']}))
     );
     // Date, Total, Mandatory, Discretionary, Assets, Income
-    single_month_row = [split_months[i-1], single_total.value, single_mandatory.value, single_discretionary.value, single_assets.value, single_income.value];
+    const single_month_row = [split_months[i-1], single_total.value, single_mandatory.value, single_discretionary.value, single_assets.value, single_income.value];
     sheet_values.push(single_month_row);
   }
   
   // Build Review Chart
   Logger.log('Creating cashflow review chart');
-  var sheet = ensure_new_sheet('_cashflow_review');
-  var review_range = sheet.getRange(1, 1, sheet_values.length, header.length);
+  const sheet = ensure_new_sheet('_cashflow_review');
+  const review_range = sheet.getRange(1, 1, sheet_values.length, header.length);
   review_range.setValues(sheet_values);
-  var chart = sheet.newChart()
+  const chart = sheet.newChart()
     .asAreaChart().addRange(review_range)
     .setOption('chartArea', {width:'95%', height:'95%'})
     .setOption('legend', {position:'in'})
@@ -191,24 +189,24 @@ function build_cashflow_review(mailer, kwargs) {
 
 function build_kpi_savings_rate(expense_records, income_records) {
   // savings percentage of period income
-  var total_expense = sum_records(expense_records.filter(
+  const total_expense = sum_records(expense_records.filter(
     get_record_filter({'reduced_categories': ALL_REDUCED_BUT_MISC})
   ));
-  var total_income = sum_records(income_records);
-  var savings = total_income.subtract(total_expense);
+  const total_income = sum_records(income_records);
+  const savings = total_income.subtract(total_expense);
   if (total_income.to_literal() <= 0) { return 0; }
   return savings.to_literal() / total_income.to_literal();
 }
 
 function build_kpi_discretionary_rate(expense_records, income_records) {
   // discretionary spending as percentage of period expenses
-  var total_expense = sum_records(expense_records.filter(
+  const total_expense = sum_records(expense_records.filter(
     get_record_filter({'reduced_categories': ALL_REDUCED_BUT_MISC})
   ));
-  var discretionary_records = expense_records.filter(
+  const discretionary_records = expense_records.filter(
     get_record_filter({'reduced_categories': ['Fun']})
   );
-  var total_discretionary = sum_records(discretionary_records);
+  const total_discretionary = sum_records(discretionary_records);
   if (total_expense.to_literal() <= 0) { return 0; }
   return total_discretionary.to_literal() / total_expense.to_literal();
 }
@@ -226,15 +224,15 @@ function build_kpi(mailer, kwargs) {
   if (!kwargs.all_income_records) { throw new Error('Missing all_income_records'); }
   if (!kwargs.timeframe_start) { throw new Error('Missing timeframe_start'); }
   if (!kwargs.timeframe_end) { throw new Error('Missing timeframe_end'); }
-  var split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
-  var header = ['Date'];
-  var colours = [];
-  var rows = [];
+  const split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
+  const header = ['Date'];
+  const colours = [];
+  const rows = [];
   // build by columns, not rows
-  for (var i = 0; i < split_months.length - 1; i++) {
+  for (let i = 0; i < split_months.length - 1; i++) {
     rows.push([split_months[i]]);
   }
-  for (kpi in KPI_FUNCTIONS) {
+  for (let kpi in KPI_FUNCTIONS) {
     if (!KPI_FUNCTIONS.hasOwnProperty(kpi)) { continue; }
     try {
       validate_kpi_obj(KPI_FUNCTIONS[kpi]);
@@ -244,14 +242,14 @@ function build_kpi(mailer, kwargs) {
     }
     if (!KPI_FUNCTIONS[kpi].enabled) { continue; }
     Logger.log('Building KPI %s', kpi);
-    var kpi_col = [];
+    let kpi_col = [];
     try {
       // build column (all months) for individual KPI
-      for (var i = 1; i < split_months.length; i++) {
-        var month_expenses = kwargs.all_expense_records.filter(
+      for (let i = 1; i < split_months.length; i++) {
+        const month_expenses = kwargs.all_expense_records.filter(
           get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i]})
         );
-        var month_incomes  = kwargs.all_income_records.filter(
+        const month_incomes  = kwargs.all_income_records.filter(
           get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i]})
         );
         kpi_col.push(KPI_FUNCTIONS[kpi].func(month_expenses, month_incomes));
@@ -263,7 +261,7 @@ function build_kpi(mailer, kwargs) {
     // if all is successful, add individual KPI results
     header.push(KPI_FUNCTIONS[kpi].display_name);
     colours.push(KPI_FUNCTIONS[kpi].colour);
-    for (var i = 0; i < kpi_col.length; i++) {
+    for (let i = 0; i < kpi_col.length; i++) {
       rows[i].push(kpi_col[i]);
     }
   }
@@ -271,10 +269,10 @@ function build_kpi(mailer, kwargs) {
   
   // Build KPI Chart
   Logger.log('Creating KPI chart');
-  var sheet = ensure_new_sheet('_kpis');
-  var sheet_range = sheet.getRange(1, 1, rows.length, header.length);
+  const sheet = ensure_new_sheet('_kpis');
+  const sheet_range = sheet.getRange(1, 1, rows.length, header.length);
   sheet_range.setValues(rows);
-  var fixed_range_chart = sheet.newChart()
+  const fixed_range_chart = sheet.newChart()
     .asAreaChart().addRange(sheet_range)
     .setOption('chartArea', {width:'95%', height:'95%'})
     .setOption('legend', {position:'in'})
@@ -299,32 +297,33 @@ function build_kpi(mailer, kwargs) {
 function get_html_table(kwargs) {
   // kwargs = {title, header, rows, total}
   if (!kwargs.rows || !kwargs.header) { throw new Error('Header or rows undefined, no data to generate table with'); }
-  var width = kwargs.header.length;
-  var html_str = '<p text-align="center"><table border="1"><thead>';
+  const width = kwargs.header.length;
+  let html_str = '<p text-align="center"><table border="1"><thead>';
   if (kwargs.title) {
-    html_str += '<tr><th colspan="' + width + '">' + kwargs.title + '</th></tr>';
+    html_str += `<tr><th colspan="${width}">${kwargs.title}</th></tr>`;
   }
   html_str += '<tr>';
-  for (var i = 0; i < width; i++) {
-    html_str += '<th text-align="center">' + kwargs.header[i] + '</th>';
+  for (let i = 0; i < width; i++) {
+    html_str += `<th text-align="center">${kwargs.header[i]}</th>`;
   }
   html_str += '</tr></thead><tbody>';
-  for (var i = 0; i < kwargs.rows.length; i++) {
+  for (let i = 0; i < kwargs.rows.length; i++) {
     html_str += '<tr>';
-    for (var k = 0; k < kwargs.rows[i].length; k++) {
-      html_str += '<td>' + kwargs.rows[i][k] + '</td>';
+    for (let k = 0; k < kwargs.rows[i].length; k++) {
+      html_str += `<td>${kwargs.rows[i][k]}</td>`;
     }
     html_str += '</tr>';
   }
   if (kwargs.total) {
+    let total_span, amount_span;
     if (width > 2) {
-      var total_span = width - 2;
-      var amount_span = 2;
+      total_span = width - 2;
+      amount_span = 2;
     } else {
-      var total_span = 1;
-      var amount_span = 1;
+      total_span = 1;
+      amount_span = 1;
     }
-    html_str += '<tr><th colspan="' + total_span + '">Total:</th><th colspan="'+ amount_span + '">' + kwargs.total + '</th></tr>';
+    html_str += `<tr><th colspan="${total_span}">Total:</th><th colspan="${amount_span}">${kwargs.total}</th></tr>`;
   }
   html_str += '</tbody></table></p>';
   return html_str;
@@ -335,27 +334,27 @@ function build_budget_forecast(mailer, kwargs) {
   if (!kwargs.all_expense_records) { throw new Error('Missing all_expense_records'); }
   if (!kwargs.timeframe_start) { throw new Error('Missing timeframe_start'); }
   if (!kwargs.timeframe_end) { throw new Error('Missing timeframe_end'); }
-  var series_by_category = {}
-  for (cat in EXPENSE_CATEGORIES) {
+  const series_by_category = {}
+  for (let cat in EXPENSE_CATEGORIES) {
     if (!EXPENSE_CATEGORIES.hasOwnProperty(cat)) { continue; }
     series_by_category[cat] = [];
   }
   // convert records into a series of monthly sums for each category
-  var split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
-  for (var i = 1; i < split_months.length; i++) {
-    var month_records = kwargs.all_expense_records.filter(
+  const split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
+  for (let i = 1; i < split_months.length; i++) {
+    const month_records = kwargs.all_expense_records.filter(
       get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i]})
     );
-    for (cat in EXPENSE_CATEGORIES) {
+    for (let cat in EXPENSE_CATEGORIES) {
       if (!EXPENSE_CATEGORIES.hasOwnProperty(cat)) { continue; }
-      var cat_month_records = month_records.filter(
+      const cat_month_records = month_records.filter(
         get_record_filter({'categories': [cat]})
       );
       series_by_category[cat].push(sum_records(cat_month_records).to_literal());
     }
   }
-  var forecast_by_category = {}
-  for (cat in series_by_category) {
+  const forecast_by_category = {}
+  for (let cat in series_by_category) {
     if (!series_by_category.hasOwnProperty(cat)) { continue; }
     // skip categories with no records in their history (0-filled array)
     if (is_zero_array(series_by_category[cat])) { continue; }
@@ -363,35 +362,35 @@ function build_budget_forecast(mailer, kwargs) {
     forecast_by_category[cat] = forecast(series_by_category[cat], FORECAST_HORIZON);
   }
   // build table
-  var header = ['Category', '2 Months Ago', 'Prior Month', 'Current Forecast'];
-  for (var i = 1; i < FORECAST_HORIZON; i++) {
+  const header = ['Category', '2 Months Ago', 'Prior Month', 'Current Forecast'];
+  for (let i = 1; i < FORECAST_HORIZON; i++) {
     header.push(i + ' Months Ahead');
   }
-  var rows = [];
+  const rows = [];
   // category sums per month plus forecasts
-  var totals = create_zero_filled_array(2 + FORECAST_HORIZON);
-  for (cat in forecast_by_category) {  // using forecast because zero-filled arrays are already filtered out
+  const totals = create_zero_filled_array(2 + FORECAST_HORIZON);
+  for (let cat in forecast_by_category) {  // using forecast because zero-filled arrays are already filtered out
     if (!forecast_by_category.hasOwnProperty(cat)) { continue; }
-    var single_row = [
+    const single_row = [
       cat,
       new CurrencyUSD(series_by_category[cat][series_by_category[cat].length - 2]).to_string(),
       new CurrencyUSD(series_by_category[cat][series_by_category[cat].length - 1]).to_string()
     ];
     totals[0] += series_by_category[cat][series_by_category[cat].length - 2];
     totals[1] += series_by_category[cat][series_by_category[cat].length - 1];
-    for (var i = 0; i < FORECAST_HORIZON; i++) {
+    for (let i = 0; i < FORECAST_HORIZON; i++) {
       single_row.push(new CurrencyUSD(forecast_by_category[cat][i]).to_string());
       totals[2 + i] += forecast_by_category[cat][i];
     }
     rows.push(single_row);
   }
   // create custom total row
-  var total_row = ['<b>Total:</b>'];
-  for (var i = 0; i < totals.length; i++) {
+  const total_row = ['<b>Total:</b>'];
+  for (let i = 0; i < totals.length; i++) {
     total_row.push(new CurrencyUSD(totals[i]).to_string());
   }
   rows.push(total_row);
-  var table_html = get_html_table(
+  const table_html = get_html_table(
     {
       'title': 'Categorical Expense Breakdown and Forecast',
       'header': header,
@@ -406,31 +405,30 @@ function build_expense_category_breakdown(mailer, kwargs) {
   if (!kwargs.all_expense_records) { throw new Error('Missing all_expense_records'); }
   if (!kwargs.timeframe_start) { throw new Error('Missing timeframe_start'); }
   if (!kwargs.timeframe_end) { throw new Error('Missing timeframe_end'); }
-  var split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
+  const split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
   // use only window of the last two dates
-  var start_date = split_months[split_months.length - 2];
-  var end_date = split_months[split_months.length - 1];
-  var month_records = kwargs.all_expense_records.filter(
+  const start_date = split_months[split_months.length - 2];
+  const end_date = split_months[split_months.length - 1];
+  const month_records = kwargs.all_expense_records.filter(
     get_record_filter({'start_date': start_date, 'end_date': end_date})
   );
   if (!month_records.length) {
     Logger.log('No expenses for breakdown, exiting');
     return;
   }
-  var header = ['Category', 'Amount'];
-  var rows = [];
-  var single_category, single_category_records, single_category_total;
-  for (single_category in EXPENSE_CATEGORIES) {
+  const header = ['Category', 'Amount'];
+  const rows = [];
+  for (let single_category in EXPENSE_CATEGORIES) {
     if (!EXPENSE_CATEGORIES.hasOwnProperty(single_category)) { continue; }
-    single_category_records = month_records.filter(
+    const single_category_records = month_records.filter(
       get_record_filter({'categories': [single_category]})
     );
-    single_category_total = sum_records(single_category_records);
+    const single_category_total = sum_records(single_category_records);
     if (single_category_total.value > 0) {
       rows.push([single_category, single_category_total.to_string()]);
     }
   }
-  var table_html = get_html_table(
+  const table_html = get_html_table(
     {
       'title': 'Categorical Expense Breakdown',
       'header': header,
@@ -446,19 +444,19 @@ function build_expense_breakdown(mailer, kwargs) {
   if (!kwargs.all_expense_records) { throw new Error('Missing all_expense_records'); }
   if (!kwargs.timeframe_start) { throw new Error('Missing timeframe_start'); }
   if (!kwargs.timeframe_end) { throw new Error('Missing timeframe_end'); }
-  var split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
+  const split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
   // use only window of the last two dates
-  var start_date = split_months[split_months.length - 2];
-  var end_date = split_months[split_months.length - 1];
-  var month_records = kwargs.all_expense_records.filter(
+  const start_date = split_months[split_months.length - 2];
+  const end_date = split_months[split_months.length - 1];
+  const month_records = kwargs.all_expense_records.filter(
     get_record_filter({'start_date': start_date, 'end_date': end_date})
   );
   if (!month_records.length) {
     Logger.log('No expenses for breakdown, exiting');
     return;
   }
-  var display_rows = month_records.map(function (record) { return record.display_array(); });
-  var table_html = get_html_table(
+  const display_rows = month_records.map(record => record.display_array());
+  const table_html = get_html_table(
     {
       'title': 'Expense Breakdown', // FIXME use month's date?
       'header': month_records[0].display_header(),
@@ -474,19 +472,19 @@ function build_income_breakdown(mailer, kwargs) {
   if (!kwargs.all_income_records) { throw new Error('Missing all_income_records'); }
   if (!kwargs.timeframe_start) { throw new Error('Missing timeframe_start'); }
   if (!kwargs.timeframe_end) { throw new Error('Missing timeframe_end'); }
-  var split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
+  const split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
   // use only window of the last two dates
-  var start_date = split_months[split_months.length - 2];
-  var end_date = split_months[split_months.length - 1];
-  var month_records = kwargs.all_income_records.filter(
+  const start_date = split_months[split_months.length - 2];
+  const end_date = split_months[split_months.length - 1];
+  const month_records = kwargs.all_income_records.filter(
     get_record_filter({'start_date': start_date, 'end_date': end_date})
   );
   if (!month_records.length) {
     Logger.log('No incomes for breakdown, exiting');
     return;
   }
-  var display_rows = month_records.map(function (record) { return record.display_array(); });
-  var table_html = get_html_table(
+  const display_rows = month_records.map(record => record.display_array());
+  const table_html = get_html_table(
     {
       'title': 'Income Breakdown', // FIXME use month's date?
       'header': month_records[0].display_header(),
@@ -502,23 +500,22 @@ function build_discretionary_expense_by_account(mailer, kwargs) {
   if (!kwargs.all_expense_records) { throw new Error('Missing all_expense_records'); }
   if (!kwargs.timeframe_start) { throw new Error('Missing timeframe_start'); }
   if (!kwargs.timeframe_end) { throw new Error('Missing timeframe_end'); }
-  var accounts = [];
-  var colours = [];
-  for (account_name in ACCOUNT_NAMES) {
+  const accounts = [];
+  const colours = [];
+  for (let account_name in ACCOUNT_NAMES) {
     if (!ACCOUNT_NAMES.hasOwnProperty(account_name)) { continue; }
     accounts.push(account_name);
     colours.push(ACCOUNT_NAMES[account_name]);
   }
-  var split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
-  var header = ['Date'].concat(accounts);
-  var sheet_values = [header];
-  var single_month_expense_records, single_month_expense_row;
-  for (var i = 1; i < split_months.length; i++) {
-    single_month_expense_records = kwargs.all_expense_records.filter(
+  const split_months = split_timeframe_into_months(kwargs.timeframe_start, kwargs.timeframe_end);
+  const header = ['Date'].concat(accounts);
+  const sheet_values = [header];
+  for (let i = 1; i < split_months.length; i++) {
+    const single_month_expense_records = kwargs.all_expense_records.filter(
       get_record_filter({'start_date': split_months[i-1], 'end_date': split_months[i], 'reduced_categories': ['Fun']})
     );
-    single_month_expense_row = [split_months[i-1]];
-    for (var j = 0; j < accounts.length; j++) {
+    const single_month_expense_row = [split_months[i-1]];
+    for (let j = 0; j < accounts.length; j++) {
       single_month_expense_row.push(
         sum_records(
           single_month_expense_records.filter(
@@ -532,10 +529,10 @@ function build_discretionary_expense_by_account(mailer, kwargs) {
 
   // Build Review Chart
   Logger.log('Creating discretionary expense by account review chart');
-  var sheet = ensure_new_sheet('_discretionary_expense_by_account_review');
-  var review_range = sheet.getRange(1, 1, sheet_values.length, header.length);
+  const sheet = ensure_new_sheet('_discretionary_expense_by_account_review');
+  const review_range = sheet.getRange(1, 1, sheet_values.length, header.length);
   review_range.setValues(sheet_values);
-  var chart = sheet.newChart()
+  const chart = sheet.newChart()
     .asAreaChart().addRange(review_range)
     .setOption('chartArea', {width:'95%', height:'95%'})
     .setOption('legend', {position:'in'})
