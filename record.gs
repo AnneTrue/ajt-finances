@@ -1,20 +1,20 @@
 // Functions related to record objects (the models used in the scripts)
 
-var CurrencyUSD = function(num_val) {
+const CurrencyUSD = function(num_val) {
   if (num_val.value) {
-    this.value = new Number(num_val.value);
+    this.value = Number(num_val.value);
   } else {
-    this.value = new Number(num_val);
+    this.value = Number(num_val);
   }
-  this.to_literal = function() { return this.value.valueOf(); }
-  this.to_string = function() { return '$' + this.value.toFixed(2); }
-  this.add = function(other) { return new CurrencyUSD(this.value + other.value); }
-  this.subtract = function(other) { return new CurrencyUSD(this.value - other.value); }
-  this.multiply = function(multiplicand) { return new CurrencyUSD(this.value * multiplicand); }
-  this.divide = function(divisor) { return new CurrencyUSD(this.value / divisor); }
+  this.to_literal = () => this.value.valueOf()
+  this.to_string = () => '$' + this.value.toFixed(2)
+  this.add = other => new CurrencyUSD(this.value + other.value)
+  this.subtract = other => new CurrencyUSD(this.value - other.value)
+  this.multiply = multiplicand => new CurrencyUSD(this.value * multiplicand)
+  this.divide = divisor => new CurrencyUSD(this.value / divisor)
 }
 
-var ExpenseRecord = function(account, date, amount, category, note) {
+const ExpenseRecord = function(account, date, amount, category, note) {
   this.account = account;
   this.date = new Date(date);
   this.amount = new CurrencyUSD(amount);
@@ -22,70 +22,46 @@ var ExpenseRecord = function(account, date, amount, category, note) {
   this.note = note;
   this.reduced_category = EXPENSE_CATEGORIES[this.category];
 
-  this.to_array = function() {
-    return [this.date, this.amount.value, this.category, this.note, this.account];
-  }
-  this.display_date = function() {
-    return display_date(this.date);
-  }
-  this.display_header = function() {
-    return ['Date', 'Account', 'Category', 'Amount', 'Note'];
-  }
-  this.display_array = function() {
-    return [this.display_date(), this.account, this.category, this.amount.to_string(), this.note];
-  }
+  this.to_array = () => [this.date, this.amount.value, this.category, this.note, this.account]
+  this.display_date = () => display_date(this.date)
+  this.display_header = () => ['Date', 'Account', 'Category', 'Amount', 'Note']
+  this.display_array = () => [this.display_date(), this.account, this.category, this.amount.to_string(), this.note]
 }
 
 function get_expense_record_from_array(row) {
-  var date = row[0];
-  var amount = row[1];
-  var category = row[2];
-  var note = row[3];
-  var account = row[4];
+  const [date, amount, category, note, account] = row
   return get_expense_record(account, date, amount, category, note);
 }
 
 function get_expense_record(account, date, amount, category, note) {
-  var currency_amount = new CurrencyUSD(amount);
+  const currency_amount = new CurrencyUSD(amount);
   if (!date || !is_valid_expense_category(category) || currency_amount.value <= 0) {
     return null;
   }
   return new ExpenseRecord(account, date, currency_amount, category, note);
 }
 
-var IncomeRecord = function(account, date, amount, category, note) { 
+const IncomeRecord = function(account, date, amount, category, note) { 
   this.account = account;
   this.date = new Date(date);
   this.amount = new CurrencyUSD(amount);
   this.category = category;
   this.note = note;
 
-  this.to_array = function() {
-    return [this.date, this.amount.value, this.category, this.note, this.account];
-  }
-  this.display_date = function() {
-    return display_date(this.date);
-  }
-  this.display_header = function() {
-    return ['Date', 'Account', 'Category', 'Amount', 'Note'];
-  }
-  this.display_array = function() {
-    return [this.display_date(), this.account, this.category, this.amount.to_string(), this.note];
-  }
+  this.to_array = () => [this.date, this.amount.value, this.category, this.note, this.account]
+  this.display_date = () => display_date(this.date)
+  this.display_header = () => ['Date', 'Account', 'Category', 'Amount', 'Note']
+  this.display_array = () => [this.display_date(), this.account, this.category, this.amount.to_string(), this.note]
 }
 
 function get_income_record_from_array(row) {
-  var date = row[0];
-  var amount = row[1];
-  var category = row[2];
-  var note = row[3];
-  var account = row[4];
+  const [date, amount, category, note, account] = row;
   return get_income_record(account, date, amount, category, note);
 }
 
 function get_income_record(account, date, amount, category, note) {
-  var currency_amount = new CurrencyUSD(amount);
-  if (!date ||!is_valid_income_category(category) || currency_amount.value <= 0) {
+  const currency_amount = new CurrencyUSD(amount);
+  if (!date || !is_valid_income_category(category) || currency_amount.value <= 0) {
     return null;
   }
   return new IncomeRecord(account, date, currency_amount, category, note);
@@ -128,11 +104,10 @@ function get_record_filter(kwargs) {
 function sum_records(records) {
   // array of records [expense or income] to add up the amounts
   // returns a new CurrencyUSD
-  var len = records.length;
-  var total = new CurrencyUSD(0.0);
-  for (var i = 0; i < len; i++) {
+  const len = records.length;
+  let total = new CurrencyUSD(0.0);
+  for (let i = 0; i < len; i++) {
     total = total.add(records[i].amount);
   }
   return total;
 }
-
