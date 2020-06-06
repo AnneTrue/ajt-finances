@@ -190,7 +190,7 @@ function build_cashflow_review(mailer, kwargs) {
 function build_kpi_savings_rate(expense_records, income_records) {
   // savings percentage of period income
   const total_expense = sum_records(expense_records.filter(
-    get_record_filter({'reduced_categories': ALL_REDUCED_BUT_MISC})
+    get_record_filter({'reduced_categories': REDUCED_EXPENSE_CATEGORIES})
   ));
   const total_income = sum_records(income_records);
   const savings = total_income.subtract(total_expense);
@@ -201,7 +201,7 @@ function build_kpi_savings_rate(expense_records, income_records) {
 function build_kpi_discretionary_rate(expense_records, income_records) {
   // discretionary spending as percentage of period expenses
   const total_expense = sum_records(expense_records.filter(
-    get_record_filter({'reduced_categories': ALL_REDUCED_BUT_MISC})
+    get_record_filter({'reduced_categories': REDUCED_EXPENSE_CATEGORIES})
   ));
   const discretionary_records = expense_records.filter(
     get_record_filter({'reduced_categories': ['Fun']})
@@ -376,11 +376,15 @@ function build_budget_forecast(mailer, kwargs) {
       new CurrencyUSD(series_by_category[cat][series_by_category[cat].length - 2]).to_string(),
       new CurrencyUSD(series_by_category[cat][series_by_category[cat].length - 1]).to_string()
     ];
-    totals[0] += series_by_category[cat][series_by_category[cat].length - 2];
-    totals[1] += series_by_category[cat][series_by_category[cat].length - 1];
-    for (let i = 0; i < FORECAST_HORIZON; i++) {
-      single_row.push(new CurrencyUSD(forecast_by_category[cat][i]).to_string());
-      totals[2 + i] += forecast_by_category[cat][i];
+    // We want to exclude non-expense categories from the totals, e.g. "Other" and "Asset"
+    // but still display the forecasts inline
+    if (REDUCED_EXPENSE_CATEGORIES.indexOf(EXPENSE_CATEGORIES[cat]) !== -1) {
+      totals[0] += series_by_category[cat][series_by_category[cat].length - 2];
+      totals[1] += series_by_category[cat][series_by_category[cat].length - 1];
+      for (let i = 0; i < FORECAST_HORIZON; i++) {
+        single_row.push(new CurrencyUSD(forecast_by_category[cat][i]).to_string());
+        totals[2 + i] += forecast_by_category[cat][i];
+      }
     }
     rows.push(single_row);
   }
@@ -428,12 +432,16 @@ function build_expense_category_breakdown(mailer, kwargs) {
       rows.push([single_category, single_category_total.to_string()]);
     }
   }
+  // For the breakdown we want to exclude non-expense items from the total (i.e. "Other" and "Asset")
+  const month_expenses_only = month_records.filter(
+    get_record_filter({'reduced_categories': REDUCED_EXPENSE_CATEGORIES})
+  );
   const table_html = get_html_table(
     {
       'title': 'Categorical Expense Breakdown',
       'header': header,
       'rows': rows,
-      'total': sum_records(month_records).to_string(),
+      'total': sum_records(month_expenses_only).to_string(),
     }
   );
   mailer.add_body_chunk(table_html, {});
