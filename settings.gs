@@ -40,6 +40,7 @@ const EXPENSE_CATEGORIES = {
   'Insurance': 'Mandatory',
   'Investment': 'Asset',
   'Leisure & Hobbies': 'Fun',
+  'Mortgage': 'Mandatory',
   'Recreation & Fitness': 'Fun',
   'Refueling': 'Mandatory',
   'Rent': 'Mandatory',
@@ -52,7 +53,7 @@ const EXPENSE_CATEGORIES = {
 const INCOME_CATEGORIES = {
   'Capital Gains': null,
   'Gift': null,
-  'Interest': null,
+  'Interest & Dividends': null,
   'Wages': null,
   'Other': null,
 };
@@ -67,6 +68,11 @@ const REDUCED_CATEGORIES = {
 };
 const ALL_REDUCED_BUT_MISC = [
   'Asset',
+  'Debt',
+  'Fun',
+  'Mandatory',
+];
+const REDUCED_EXPENSE_CATEGORIES = [  // excludes assets as they are a type of savings, not an expense
   'Debt',
   'Fun',
   'Mandatory',
