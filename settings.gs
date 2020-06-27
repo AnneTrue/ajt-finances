@@ -37,6 +37,7 @@ const EXPENSE_CATEGORIES = {
   'Grooming': 'Mandatory',
   'Health': 'Mandatory',
   'Household Supplies': 'Mandatory',
+  'House Repairs': 'Mandatory',
   'Insurance': 'Mandatory',
   'Investment': 'Asset',
   'Leisure & Hobbies': 'Fun',
